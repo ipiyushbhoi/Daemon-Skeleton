@@ -6,6 +6,7 @@ CURRENT_PID=`${ECHO} $$`
 
 function setup_daemon() 
 {
+	log " *** `date +%Y-%m-%d-%H-%M-%S`:Entry: stop_daemon"
 	local size_in_kilobytes=""
 	local current_size=""
 
@@ -17,6 +18,10 @@ function setup_daemon()
 		"${MKDIR}" "${PROCESS_ID_DIRECTORY}"
 	fi
   
+	if [ ! -f "${PROCESS_ID_FILE}" ]; then
+		${TOUCH} "${PROCESS_ID_FILE}"
+	fi
+
 	if [ ! -f "${LOG_FILE}" ]; then
 		${TOUCH} "${LOG_FILE}"
 	else
@@ -32,10 +37,12 @@ function setup_daemon()
 			${TOUCH} "$LOG_FILE"
 		fi
 	fi
+	log " *** `date +%Y-%m-%d-%H-%M-%S`:Exit: stop_daemon"
 }
 
 function start_daemon()
 {
+	log " *** `date +%Y-%m-%d-%H-%M-%S`:Entry: start_daemon"
   	# Start the daemon.
 	# Make sure the directories are there.
 	local stderr=""
@@ -49,72 +56,89 @@ function start_daemon()
 		exit 1
 	fi
 
-	${ECHO} " * Starting "${DAEMON_NAME}" with PID: "${curr_pid}"."
-	${ECHO} ""${curr_pid}"" > "$PROCESS_ID_FILE"
-	#log '*** '`date +"%Y-%m-%d"`": Starting up "${DAEMON_NAME}"."
-        ${ECHO} "*** `date +%Y-%m-%d-%H-%M-%S`: Starting up ${DAEMON_NAME}" >> "$LOG_FILE"
+	${ECHO} " * Starting "${DAEMON_NAME}" with PID: ${CURRENT_PID}."
+	${ECHO} "${CURRENT_PID}" > "${PROCESS_ID_FILE}"
+	log " *** `date +%Y-%m-%d-%H-%M-%S`:*** `${DATE} +"%Y-%m-%d"`: Starting up ${DAEMON_NAME}."
+        #${ECHO} "*** `date +%Y-%m-%d-%H-%M-%S`: Starting up ${DAEMON_NAME}" >> "$LOG_FILE"
 
 	# Start the loop.
+	log " *** `date +%Y-%m-%d-%H-%M-%S`:Exit: start_daemon"
 	loop
 }
 
 function stop_daemon() {
+	log " *** `date +%Y-%m-%d-%H-%M-%S`:Entry: stop_daemon"
 	  # Stop the daemon.
 	#if [[ `checkDaemon` == "0" ]]; then
 	#	${ECHO} " * Error: "${DAEMON_NAME}" is not running."
 	#	exit 1
 	#fi
 
+	check_daemon
+	stderr=$?
+	if [ "${stderr}" -eq 1 ]; then
+		${ECHO} " * INFO: "${DAEMON_NAME}" is already running."
+		exit 1
+	fi
+
 	${ECHO} " * Stopping "${DAEMON_NAME}""
         ${ECHO} "*** `date +%Y-%m-%d-%H-%M-%S`: ${DAEMON_NAME} stopped" >> "$LOG_FILE"
 
 	if [[ ! -z `cat $PROCESS_ID_FILE` ]]; then
-		KILL -9 `cat "$PROCESS_ID_FILE"` &> /dev/null
+		${KILL} -9 `${CAT} "$PROCESS_ID_FILE"` &> /dev/null
 	fi
-	rm -f "$PROCESS_ID_FILE"
+	${RM} -f "$PROCESS_ID_FILE"
+	log " *** `date +%Y-%m-%d-%H-%M-%S`:Exit: stop_daemon"
 }
 
 function status_daemon() 
 {
+	log " *** `date +%Y-%m-%d-%H-%M-%S`:Entry: status_daemon"
 	# Query and return whether the daemon is running.
-	if [[ `checkDaemon` -eq 1 ]]; then
-		${ECHO} " * "${DAEMON_NAME}" is running."
+	check_daemon
+	strerr=$?
+	if [ "${stderr}" -eq 1 ]; then
+		${ECHO} " * ${DAEMON_NAME} is running."
 	else
-		${ECHO} " * "${DAEMON_NAME}" isn't running."
+		${ECHO} " * ${DAEMON_NAME} isn't running."
 	fi
+	log " *** `date +%Y-%m-%d-%H-%M-%S`:Exit: status_daemon"
 	exit 0
 }
 
 function restart_daemon() 
 {
-	# Restart the daemon.
-	#if [[ `checkDaemon` = 0 ]]; then
-	# Can't restart it if it isn't running.
-	#	${ECHO} ""${DAEMON_NAME}" isn't running."
-	#exit 1
-	#fi
+	log " *** `date +%Y-%m-%d-%H-%M-%S`:Entry: restart_daemon"
+	check_daemon
+	strerr=$?
+	if [ "${stderr}" -eq 0 ]; then
+		${ECHO} "${DAEMON_NAME} isn't running."
+	fi
 	stop_daemon
 	start_daemon
+	log " *** `date +%Y-%m-%d-%H-%M-%S`:Exit: restart_daemon"
 }
 
 function check_daemon()
 {
+	log " *** `date +%Y-%m-%d-%H-%M-%S`:Entry: check_daemon"
+	# Returns 1 if daemon is running else 0
 	# Check to see if the daemon is running.
 	# This is a different function than statusDaemon
 	# so that we can use it other functions.
 
-        stdout=`${PS} aux | grep "${CURRENT_PID}" | grep -v grep > /dev/null`
+        stdout=`${PS} aux | ${GREP} "${CURRENT_PID}" | ${GREP} -v ${GREP} > /dev/null`
 	stderr=$?
 	if [ "${stdout}" -ne 0 ]; then
 		return 1
 	fi
-	#log "*** `date +%Y-%m-%d-%H-%M-%S`: ${DAEMON_NAME} is running with PID; restarting."
+	#log " *** `date +%Y-%m-%d-%H-%M-%S`:*** `date +%Y-%m-%d-%H-%M-%S`: ${DAEMON_NAME} is running with PID; restarting."
+	log " *** `date +%Y-%m-%d-%H-%M-%S`:Exit: check_daemon"
 	return 0
 }
 
 function loop()
 {
-	${ECHO} "In function 'loop:'" >> ${LOG_FILE}
 	# This is the loop.
 	now=`date +%s`
 	${ECHO} "Now: $now" >> ${LOG_FILE}
@@ -142,16 +166,6 @@ function loop()
 	loop
 }
 
-function check()
-{
-	if [[ `checkDaemon` = "1" ]]; then
-		${ECHO} "TRUE"
-	else
-		${ECHO} "FALSE"
-	fi
-	exit 0
-}
-
 function log()
 {
 	# Generic log function.
@@ -163,7 +177,6 @@ case "$1" in
 	start)
 		startDaemon
 	;;
-
 	stop)
 		stopDaemon
 	;;

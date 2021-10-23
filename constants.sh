@@ -14,6 +14,9 @@ AWK=/usr/bin/awk
 DU=/usr/bin/du
 DATE=/usr/bin/date
 PS=/usr/bin/ps
+CAT=/usr/bin/cat
+RM=/usr/bin/rm
+GREP=/usr/bin/grep
 
 #
 # FILE/DIR PATHS
