@@ -6,7 +6,7 @@ CURRENT_PID=`${ECHO} $$`
 
 function setup_daemon() 
 {
-	log " *** `date +%Y-%m-%d-%H-%M-%S`:Entry: stop_daemon"
+	log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:Entry: stop_daemon"
 	local size_in_kilobytes=""
 	local current_size=""
 
@@ -37,12 +37,12 @@ function setup_daemon()
 			${TOUCH} "$LOG_FILE"
 		fi
 	fi
-	log " *** `date +%Y-%m-%d-%H-%M-%S`:Exit: stop_daemon"
+	log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:Exit: stop_daemon"
 }
 
 function start_daemon()
 {
-	log " *** `date +%Y-%m-%d-%H-%M-%S`:Entry: start_daemon"
+	log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:Entry: start_daemon"
   	# Start the daemon.
 	# Make sure the directories are there.
 	local stderr=""
@@ -58,16 +58,16 @@ function start_daemon()
 
 	${ECHO} " * Starting "${DAEMON_NAME}" with PID: ${CURRENT_PID}."
 	${ECHO} "${CURRENT_PID}" > "${PROCESS_ID_FILE}"
-	log " *** `date +%Y-%m-%d-%H-%M-%S`:*** `${DATE} +"%Y-%m-%d"`: Starting up ${DAEMON_NAME}."
-        #${ECHO} "*** `date +%Y-%m-%d-%H-%M-%S`: Starting up ${DAEMON_NAME}" >> "$LOG_FILE"
+	log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:*** `${DATE} +"%Y-%m-%d"`: Starting up ${DAEMON_NAME}."
+        #${ECHO} "*** `${DATE} +%Y-%m-%d-%H-%M-%S`: Starting up ${DAEMON_NAME}" >> "$LOG_FILE"
 
 	# Start the loop.
-	log " *** `date +%Y-%m-%d-%H-%M-%S`:Exit: start_daemon"
+	log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:Exit: start_daemon"
 	loop
 }
 
 function stop_daemon() {
-	log " *** `date +%Y-%m-%d-%H-%M-%S`:Entry: stop_daemon"
+	log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:Entry: stop_daemon"
 	  # Stop the daemon.
 	#if [[ `checkDaemon` == "0" ]]; then
 	#	${ECHO} " * Error: "${DAEMON_NAME}" is not running."
@@ -82,18 +82,18 @@ function stop_daemon() {
 	fi
 
 	${ECHO} " * Stopping "${DAEMON_NAME}""
-        ${ECHO} "*** `date +%Y-%m-%d-%H-%M-%S`: ${DAEMON_NAME} stopped" >> "$LOG_FILE"
+        ${ECHO} "*** `${DATE} +%Y-%m-%d-%H-%M-%S`: ${DAEMON_NAME} stopped" >> "$LOG_FILE"
 
 	if [[ ! -z `cat $PROCESS_ID_FILE` ]]; then
 		${KILL} -9 `${CAT} "$PROCESS_ID_FILE"` &> /dev/null
 	fi
 	${RM} -f "$PROCESS_ID_FILE"
-	log " *** `date +%Y-%m-%d-%H-%M-%S`:Exit: stop_daemon"
+	log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:Exit: stop_daemon"
 }
 
 function status_daemon() 
 {
-	log " *** `date +%Y-%m-%d-%H-%M-%S`:Entry: status_daemon"
+	log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:Entry: status_daemon"
 	# Query and return whether the daemon is running.
 	check_daemon
 	strerr=$?
@@ -102,26 +102,30 @@ function status_daemon()
 	else
 		${ECHO} " * ${DAEMON_NAME} isn't running."
 	fi
-	log " *** `date +%Y-%m-%d-%H-%M-%S`:Exit: status_daemon"
+
+	log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:Exit: status_daemon"
 	exit 0
 }
 
 function restart_daemon() 
 {
-	log " *** `date +%Y-%m-%d-%H-%M-%S`:Entry: restart_daemon"
+	log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:Entry: restart_daemon"
+
 	check_daemon
 	strerr=$?
 	if [ "${stderr}" -eq 0 ]; then
 		${ECHO} "${DAEMON_NAME} isn't running."
 	fi
+
 	stop_daemon
 	start_daemon
-	log " *** `date +%Y-%m-%d-%H-%M-%S`:Exit: restart_daemon"
+
+	log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:Exit: restart_daemon"
 }
 
 function check_daemon()
 {
-	log " *** `date +%Y-%m-%d-%H-%M-%S`:Entry: check_daemon"
+	log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:Entry: check_daemon"
 	# Returns 1 if daemon is running else 0
 	# Check to see if the daemon is running.
 	# This is a different function than statusDaemon
@@ -132,18 +136,18 @@ function check_daemon()
 	if [ "${stdout}" -ne 0 ]; then
 		return 1
 	fi
-	#log " *** `date +%Y-%m-%d-%H-%M-%S`:*** `date +%Y-%m-%d-%H-%M-%S`: ${DAEMON_NAME} is running with PID; restarting."
-	log " *** `date +%Y-%m-%d-%H-%M-%S`:Exit: check_daemon"
+	#log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:*** `${DATE} +%Y-%m-%d-%H-%M-%S`: ${DAEMON_NAME} is running with PID; restarting."
+	log " *** `${DATE} +%Y-%m-%d-%H-%M-%S`:Exit: check_daemon"
 	return 0
 }
 
 function loop()
 {
 	# This is the loop.
-	now=`date +%s`
+	now=`${DATE} +%s`
 	${ECHO} "Now: $now" >> ${LOG_FILE}
 	if [ -z $last ]; then
-		last=`date +%s`
+		last=`${DATE} +%s`
 	fi
 		
 	# doCommands
@@ -152,7 +156,7 @@ function loop()
 	# once a minute and it's taken more than a minute, then we should just run it
 	# anyway.
 
-	last=`date +%s`
+	last=`${DATE} +%s`
 	${ECHO} "Last: $now" >> ${LOG_FILE}
 
 	# Set the sleep interval
